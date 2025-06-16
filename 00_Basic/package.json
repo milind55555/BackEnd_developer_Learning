@@ -1,0 +1,26 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "a basic app to deploy",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/milind55555/BackEnd_developer_Learning.git"
+  },
+  "keywords": [
+    "node"
+  ],
+  "author": "milind",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/milind55555/BackEnd_developer_Learning/issues"
+  },
+  "homepage": "https://github.com/milind55555/BackEnd_developer_Learning#readme",
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0"
+  }
+}
