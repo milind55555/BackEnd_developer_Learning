@@ -1,4 +1,4 @@
-import {v2 as cloudinary} from "cloudinary "
+import {v2 as cloudinary} from "cloudinary"
 import fs from "fs"
 
 cloudinary.config({
@@ -16,7 +16,7 @@ const uploadOnCloudinary= async(localFilePath)=>{
         })
         //file  has uploaded successfully
         console.log("File is Uploaded on Cloudinary",responese.url);
-        return responese
+        return responese; 
         
         
         
