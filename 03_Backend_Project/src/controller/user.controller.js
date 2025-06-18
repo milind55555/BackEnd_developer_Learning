@@ -6,6 +6,22 @@ import {APIResponse} from '../utils/APIresponse.js'
 import path from "path";
 import fs from "fs";
 
+const generateAccessAndRefreshToken = async(userId)=>{
+  try {
+  const user=  await User.findById(userId)
+  const accessToken= user.generateAccessToken();
+  const refreshToken =user.generateRefreshToken(); 
+
+  user.refreshToken =refreshToken
+ await user.save({ validateBeforeSave:false })
+
+ return {accessToken ,refreshToken}
+    
+  } catch (error) {
+    throw new APIError(500,"Something went wrong while generating refresh and acces token")
+  }
+}
+
 
 const registerUser = asyncHandler( async(req,res)=>
     {
@@ -96,5 +112,96 @@ if (!fs.existsSync(avatarLocalPath)) {
 )
 
 
-    export {registerUser}
+
+const loginUser = asyncHandler( async(req,res)=>{
+  //req body get data 
+  // username or email
+  //find user
+  //password check
+  //access and refresh token generate
+  //send cookies
+
+  const {email,username,password} = req.body;
+
+  if(!email || !username){
+    throw new APIError(400,"username or password is required")
+  }
+
+ const user =await User.findOne({
+    $or: [{username},{email}]
+  })
+
+  if(!user){
+    throw new APIError(404,"user does not exist")
+  }
+
+ const isPasswordValide= await user.isPassword(password)
+
+ if(!isPasswordValide){
+    throw new APIError(401,"Password  Incorrect or user invalid Credentials")
+  }
+
+
+const {accessToken , refreshToken}= await generateAccessAndRefreshToken(user._id);
+
+
+const loggedUser = await User.findById(user._id).select(
+  "-password -refreshToken"
+)
+
+
+const options ={
+  httpOnly:true,  //cookies only modifies through server not frontend
+  secure:true
+}
+
+return res
+.status(200)
+.cookie("accessToken",accessToken,options)
+.cookie("refreshToken",refreshToken,options)
+.json(
+  new APIResponse(
+    200,
+    {
+      user:loggedUser,accessToken,refreshToken
+    },
+    "User Logged In Successfully!!"
+  )
+)
+
+
+
+
+
+})
+
+
+const logOutUser = asyncHandler(async(req,res)=>{
+ await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set:{
+        refreshToken:undefined
+      }
+    },
+    {
+      new:true
+    }
+  )
+
+  const options ={
+  httpOnly:true,  //cookies only modifies through server not frontend
+  secure:true
+}
+
+return res
+.status(200)
+.clearCookie("accessToken",options)
+.clearCookie("refreshToken",options)
+.json(new APIResponse(200,{},"User Logged Out"))
+
+
+})
+
+    export {registerUser , loginUser, logOutUser}
 
