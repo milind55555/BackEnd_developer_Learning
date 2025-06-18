@@ -3,6 +3,8 @@ import {APIError} from "../utils/APIerror.js"
 import {User} from "../models/user.models.js"  //default not there in model.user.js
 import {uploadOnCloudinary} from '../utils/cloudinary.js'
 import {APIResponse} from '../utils/APIresponse.js'
+import path from "path";
+import fs from "fs";
 
 
 const registerUser = asyncHandler( async(req,res)=>
@@ -21,16 +23,14 @@ const registerUser = asyncHandler( async(req,res)=>
       const {fullname,email,username,password} =req.body
       console.log("Email:",email);
 
-      if(
-        [fullname,email,username,password].some((field)=>{
-            field?.trim() === ""
-        })
-      ){
-            throw new APIError(400,"All fields are required!")
-      }
+   if (
+  [fullname, email, username, password].some(field => !field || field.trim() === "")
+) {
+  throw new APIError(400, "All fields are required!");
+}
 
 
-     const existedUser= User.findOne({
+     const existedUser=await User.findOne({
         $or :[{username},{email}]
       })
       console.log(existedUser);
@@ -39,11 +39,23 @@ const registerUser = asyncHandler( async(req,res)=>
       if(existedUser){
         throw new APIError(409,"User with email or usermane is already exists")
       } 
+  console.log("req.files:", req.files);
+  console.log("req.files:", req.files);
+console.log("avatar[0]:", req.files?.avatar?.[0]);
+console.log("avatar[0].path:", req.files?.avatar?.[0]?.path);
 
 
-      const  avatarLocalPath= req.files?.avatar[0]?.path;
-
-     const coverImageLocalPath = req.files?.coverImage[0]?.path;
+      // Use path.resolve to get absolute path
+      const avatarLocalPath = req.files?.avatar?.[0]?.path
+        ? path.resolve(req.files.avatar[0].path)
+        : null;
+      const coverImageLocalPath = req.files?.coverImage?.[0]?.path
+        ? path.resolve(req.files.coverImage[0].path)
+        : null;
+        console.log("avatarLocalPath:", avatarLocalPath);
+if (!fs.existsSync(avatarLocalPath)) {
+    console.error("File does not exist:", avatarLocalPath);
+}
 
 
      if(!avatarLocalPath){
