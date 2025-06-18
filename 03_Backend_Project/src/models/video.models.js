@@ -23,7 +23,7 @@ const videoSchema=mongoose.Schema(
             type:Number,//clau url
             required:true
         },
-        view:{
+        views:{
             type:Number,
             default:0
         },
