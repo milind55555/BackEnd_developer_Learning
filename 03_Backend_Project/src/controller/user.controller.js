@@ -5,6 +5,7 @@ import {uploadOnCloudinary} from '../utils/cloudinary.js'
 import {APIResponse} from '../utils/APIresponse.js'
 import path from "path";
 import fs from "fs";
+import jwt from "jsonwebtoken"
 
 const generateAccessAndRefreshToken = async(userId)=>{
   try {
@@ -123,9 +124,10 @@ const loginUser = asyncHandler( async(req,res)=>{
 
   const {email,username,password} = req.body;
 
-  if(!email || !username){
-    throw new APIError(400,"username or password is required")
+  if(!email  && !username){
+    throw new APIError(400,"email or username is required")
   }
+  
 
  const user =await User.findOne({
     $or: [{username},{email}]
@@ -203,5 +205,52 @@ return res
 
 })
 
-    export {registerUser , loginUser, logOutUser}
+
+const RefreshAccessToken = asyncHandler(async(req,res)=>{
+const incominRefreshToken =  req.cookies.refreshToken || req.body.refreshToken
+
+if(!incominRefreshToken){
+  throw new APIError(401,"unauthorizaed request")
+}
+
+ try {
+  const decodedToken = jwt.verify(
+   incominRefreshToken,
+   process.env.REFRESH_TOKEN_SECRET)
+ 
+   const user =await User.findById(decodedToken?._id)
+ 
+   if(!user){
+     throw new APIError(401,"Invalid Refresh Token")
+   }
+ 
+     if(incominRefreshToken !== user?.refreshToken){
+           throw new APIError(401,"Refresh Token is expired or used!!")
+ 
+     }
+ 
+     const options={
+       httpOnly:true,
+       secure:true 
+   }
+   const {newaccessToken,newrefreshToken}= await generateAccessAndRefreshToken(user._id)
+ 
+    return res
+    .status(200)
+    .cookie("accessToken",newaccessToken)
+    .cookie("refreshToken",newrefreshToken)
+    .json(
+     new APIResponse(
+       200,
+       {newaccessToken,newrefreshToken},
+       "Access Token refreshed"
+     )
+    )
+ } 
+ catch (error) {
+    throw new APIError(401, error?.message || "Invalid Refresh token")
+ }
+
+})
+    export {registerUser , loginUser, logOutUser,RefreshAccessToken}
 
